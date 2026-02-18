@@ -66,14 +66,15 @@ def add_product():
     return jsonify({"status": "created"}), 201
 
 
-# --- DELIBERATELY VULNERABLE: SQL Injection for CodeQL to detect ---
+# --- Search endpoint: parameterized query to avoid SQL injection ---
 @app.route("/search")
 def search_products():
     query = request.args.get("q", "")
+    search_pattern = f"%{query}%"
     conn = get_db()
-    # BAD: string concatenation in SQL query
     results = conn.execute(
-        "SELECT * FROM products WHERE name LIKE '%" + query + "%'"
+        "SELECT * FROM products WHERE name LIKE ?",
+        (search_pattern,),
     ).fetchall()
     conn.close()
     return jsonify([dict(row) for row in results])
